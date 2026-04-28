@@ -20,7 +20,7 @@
   ],
   "browser": "smart-color-picker.html",
   "cdn": {
-    "jsdelivr": "release/smart-color-picker/smart-color-picker.html",
+    "jsdelivr": "smart-color-picker.html",
     "type": "html-spa"
   },
   "api": {

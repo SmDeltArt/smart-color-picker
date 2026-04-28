@@ -16,22 +16,22 @@ Just open `smart-color-picker.html` in any browser.
 
 ```html
 <iframe
-  src="https://cdn.jsdelivr.net/gh/<user>/<repo>@latest/release/smart-color-picker/smart-color-picker.html"
+  src="https://cdn.jsdelivr.net/gh/SmDeltArt/smart-color-picker@v1.2.0/smart-color-picker.html"
   style="border:0;width:420px;height:560px;background:transparent"
   allowtransparency="true"
 ></iframe>
 ```
 
-Replace `<user>/<repo>` with your GitHub path. Pin a version with `@v1.2.0` for production.
+Use `@v1.2.0` (or any tag) for production. `@latest` follows the default branch.
 
 ### 3. CDN options
 
-| CDN          | URL pattern                                                                                           |
-| ------------ | ----------------------------------------------------------------------------------------------------- |
-| jsDelivr     | `https://cdn.jsdelivr.net/gh/<user>/<repo>@<tag>/release/smart-color-picker/smart-color-picker.html`  |
-| Statically   | `https://cdn.statically.io/gh/<user>/<repo>/<tag>/release/smart-color-picker/smart-color-picker.html` |
-| GitHub Pages | `https://<user>.github.io/<repo>/release/smart-color-picker/smart-color-picker.html`                  |
-| Vercel       | configure `release/smart-color-picker/` as a route                                                    |
+| CDN          | URL pattern                                                                               |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| jsDelivr     | `https://cdn.jsdelivr.net/gh/SmDeltArt/smart-color-picker@<tag>/smart-color-picker.html`  |
+| Statically   | `https://cdn.statically.io/gh/SmDeltArt/smart-color-picker/<tag>/smart-color-picker.html` |
+| GitHub Pages | `https://smdeltart.github.io/smart-color-picker/smart-color-picker.html`                  |
+| Vercel       | deploy this repo and route `/smart-color-picker.html`                                     |
 
 ## Public API
 
@@ -163,7 +163,7 @@ You can also pass `palette` inside `scp:open` data to apply at open time. Reset 
 For production embeds, **always pin a tag**:
 
 ```
-https://cdn.jsdelivr.net/gh/<user>/<repo>@v1.2.0/release/smart-color-picker/smart-color-picker.html
+https://cdn.jsdelivr.net/gh/SmDeltArt/smart-color-picker@v1.2.0/smart-color-picker.html
 ```
 
 Using `@latest` or no tag will pull the most recent commit and may break.
