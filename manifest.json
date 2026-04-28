@@ -1,10 +1,23 @@
 {
   "name": "smart-color-picker",
-  "version": "1.1.0",
-  "description": "Self-contained color picker widget (solid, gradient, alpha, presets) — single HTML, zero dependencies.",
+  "version": "1.2.0",
+  "description": "Self-contained color picker widget (solid, gradient, alpha, presets, tutorial tips, i18n) — single HTML, zero dependencies.",
   "main": "smart-color-picker.html",
-  "files": ["smart-color-picker.html"],
-  "keywords": ["color-picker", "gradient", "widget", "spa", "standalone", "smart-widget"],
+  "files": [
+    "smart-color-picker.html",
+    "smart-colorset.json",
+    "smart-color-picker.i18n.csv",
+    "demo.html",
+    "README.md"
+  ],
+  "keywords": [
+    "color-picker",
+    "gradient",
+    "widget",
+    "spa",
+    "standalone",
+    "smart-widget"
+  ],
   "browser": "smart-color-picker.html",
   "cdn": {
     "jsdelivr": "release/smart-color-picker/smart-color-picker.html",
@@ -14,8 +27,9 @@
     "global": "SmartColorPicker",
     "config": "SmartColorPickerConfig",
     "messages": {
-      "in": ["scp:open", "scp:close", "scp:set", "scp:setTheme"],
-      "out": ["scp:color", "scp:commit", "scp:closed"]
+      "envelope": { "type": "smart-widget", "action": "<scp:*>", "data": {} },
+      "in": ["scp:open", "scp:close", "scp:set", "scp:setTheme", "scp:get"],
+      "out": ["scp:color", "scp:validate", "scp:close", "scp:size"]
     }
   }
 }

@@ -3,13 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SmΔrt Color Picker — Embed Demo</title>
+    <title>SmΔrt Color Picker — Drop-in Widget</title>
+    <link
+      id="dynamicFavicon"
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpolygon points='16,5.33 26.67,24 5.33,24' fill='none' stroke='%2300ffff' stroke-width='2.5'/%3E%3C/svg%3E"
+    />
     <style>
+      :root {
+        --bg: #1a1d2e;
+        --fg: #e0e0e0;
+        --muted: #9ca3af;
+        --accent: #6366f1;
+      }
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         font-family: system-ui, "Segoe UI", sans-serif;
-        background: #1a1d2e;
-        color: #e0e0e0;
+        background: var(--bg);
+        color: var(--fg);
         min-height: 100vh;
         display: flex;
         flex-direction: column;
@@ -17,58 +32,1011 @@
         padding: 24px;
         gap: 16px;
       }
-      h1 { margin: 0; font-weight: 600; }
-      .swatch {
-        width: 240px;
-        height: 60px;
+
+      /* SmΔrt brand — same as color-picker info popover */
+      h1.smart-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 1px;
+        font-weight: 600;
+        font-size: 22px;
+        margin: 0;
+        line-height: 1;
+        user-select: none;
+      }
+      h1.smart-brand .brand-sm,
+      h1.smart-brand .brand-rt {
+        color: var(--fg);
+        letter-spacing: 0.3px;
+      }
+      h1.smart-brand svg.delta-animation {
+        width: 28px;
+        height: 28px;
+        display: inline-block;
+        transform-origin: center center;
+        color: #06b6d4;
+        margin: 0 1px;
+      }
+      h1.smart-brand svg.delta-animation polygon {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.5;
+      }
+      h1.smart-brand .brand-suffix {
+        font-weight: 400;
+        font-size: 16px;
+        color: var(--muted);
+        margin-left: 8px;
+      }
+
+      .palette-icon {
+        width: 48px;
+        height: 48px;
+        margin-top: 4px;
+      }
+
+      /* ─── Host theme picker (top-right corner) ──────────────────── */
+      .theme-switch {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        gap: 4px;
+        z-index: 10;
+      }
+      .theme-switch button {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        cursor: pointer;
+        padding: 0;
+        transition: transform 0.15s;
+      }
+      .theme-switch button:hover {
+        transform: scale(1.15);
+      }
+      .theme-switch button.active {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px var(--accent);
+      }
+
+      /* ─── Demo "host" card ──────────────────────────────────────── */
+      .host-card {
+        width: min(420px, 92vw);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        backdrop-filter: blur(6px);
+      }
+      .host-card-title {
+        font:
+          600 13px/1 system-ui,
+          sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+      .field {
+        display: grid;
+        grid-template-columns: 70px 1fr;
+        align-items: center;
+        gap: 10px;
+      }
+      .field label {
+        font:
+          500 13px/1 system-ui,
+          sans-serif;
+        color: var(--muted);
+      }
+      /* Color button: full-width row that looks like a form field but
+         the entire surface is a click target opening the picker. */
+      .color-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 10px;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 8px;
-        background: #6366f1;
-        border: 1px solid rgba(255,255,255,0.1);
-        transition: background 0.2s;
+        color: var(--fg);
+        cursor: pointer;
+        font:
+          13px/1 "Cascadia Code",
+          ui-monospace,
+          monospace;
+        text-align: left;
+        transition: all 0.15s;
       }
-      iframe {
-        border: 0;
-        width: 420px;
-        height: 560px;
+      .color-btn:hover {
+        border-color: var(--accent);
+        background: rgba(0, 0, 0, 0.35);
+      }
+      .color-btn.active {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+      }
+      /* Big variant: single-button hero in the simplified demo */
+      .color-btn.big {
+        padding: 14px 16px;
+        font-size: 15px;
+      }
+      .color-btn.big .chip {
+        width: 32px;
+        height: 32px;
+      }
+
+      /* ─── Interactive code panel ───────────────────────────────── */
+      .code-panel {
+        margin-top: 6px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .code-tabs {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 8px;
+        background: rgba(0, 0, 0, 0.3);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .code-tab {
         background: transparent;
+        border: 1px solid transparent;
+        color: var(--muted);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font:
+          600 11px/1 system-ui,
+          sans-serif;
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
+      .code-tab.active {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--fg);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+      .code-pill {
+        margin-left: auto;
+        font:
+          700 10px/1 system-ui,
+          sans-serif;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--accent) 25%, transparent);
+        color: var(--fg);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .code-copy {
+        background: var(--accent);
+        color: #fff;
+        border: 0;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font:
+          600 11px/1 system-ui,
+          sans-serif;
+        cursor: pointer;
+      }
+      .code-copy:hover {
+        filter: brightness(1.1);
+      }
+      .code-copy.copied {
+        background: #22c55e;
+      }
+      .code-pane {
+        margin: 0;
+        padding: 12px 14px;
+        font:
+          12px/1.5 "Cascadia Code",
+          ui-monospace,
+          monospace;
+        color: #e5e7eb;
+        max-height: 260px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        display: none;
+      }
+      .code-pane.active {
+        display: block;
+      }
+      /* Chip = checkerboard + filled overlay (so alpha < 1 is visible) */
+      .chip {
+        position: relative;
+        width: 22px;
+        height: 22px;
+        border-radius: 5px;
+        flex: 0 0 auto;
+        background-color: #fff;
+        background-image:
+          linear-gradient(45deg, #b0b0b0 25%, transparent 25%),
+          linear-gradient(-45deg, #b0b0b0 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #b0b0b0 75%),
+          linear-gradient(-45deg, transparent 75%, #b0b0b0 75%);
+        background-size: 8px 8px;
+        background-position:
+          0 0,
+          0 4px,
+          4px -4px,
+          -4px 0;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+      .chip-fill {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: #6366f1;
+      }
+      .chip-val {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .chip-meta {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .preview-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+      }
+      .preview {
+        width: 100%;
+        height: 80px;
+        border-radius: 10px;
+        background: #6366f1;
+        border: 2px solid #1f2937;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+        transition:
+          background 0.15s,
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .preview-cap {
+        font:
+          500 11px/1 system-ui,
+          sans-serif;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      /* Sample message panel: shows the live envelope/payload the
+         widget posts back to the host. Helps integrators see what
+         data they get for solid colors vs gradients. */
+      .info {
+        margin-top: 16px;
+        width: min(640px, 90vw);
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font:
+          12px/1.45 "Cascadia Code",
+          ui-monospace,
+          monospace;
+        color: var(--muted);
+      }
+      .info-head {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-weight: 600;
+        color: #e2e8f0;
+        margin-bottom: 6px;
+      }
+      .info-head .pill {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: rgba(99, 102, 241, 0.25);
+        color: #c7d2fe;
+        font-weight: 700;
+      }
+      .info-head .pill.grad {
+        background: rgba(34, 197, 94, 0.25);
+        color: #86efac;
+      }
+      .info pre {
+        margin: 0;
+        max-height: 260px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+
       code {
-        background: rgba(0,0,0,0.4);
+        background: rgba(0, 0, 0, 0.4);
         padding: 2px 6px;
         border-radius: 4px;
         font-family: "Cascadia Code", monospace;
       }
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      /* ─── Fullscreen overlay iframe ─────────────────────────────────
+         The widget itself is a draggable floating panel inside its own
+         body. We give it a fullscreen, transparent iframe to live in
+         so the panel can be dragged anywhere over the host page. The
+         iframe is only "active" (pointer-events: auto) while open;
+         when closed we hide it so the host page is interactive again. */
+      #pickerFrame {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        border: 0;
+        background: transparent;
+        z-index: 9999;
+        display: none;
+      }
+      body.picker-open #pickerFrame {
+        display: block;
+      }
+
+      .open-btn {
+        background: var(--accent);
+        color: #fff;
+        border: 0;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font:
+          600 14px/1 system-ui,
+          sans-serif;
+        cursor: pointer;
+        transition: filter 0.15s;
+      }
+      .open-btn:hover {
+        filter: brightness(1.1);
+      }
     </style>
   </head>
   <body>
-    <h1>SmΔrt Color Picker — iframe embed demo</h1>
-    <div class="swatch" id="swatch"></div>
-    <p>Picked: <code id="hex">#6366f1</code></p>
-    <iframe id="picker" src="./smart-color-picker.html"></iframe>
+    <!-- Host theme picker (top-right corner). Each circle is a tiny
+         preview of an app palette; clicking restyles the host page +
+         re-skins the picker via scp:setTheme + palette overrides. -->
+    <div class="theme-switch" role="toolbar" aria-label="Host theme">
+      <button
+        type="button"
+        class="theme-btn active"
+        data-theme="midnight"
+        title="Midnight"
+        style="background: #1a1d2e"
+      ></button>
+      <button
+        type="button"
+        class="theme-btn"
+        data-theme="paper"
+        title="Paper"
+        style="background: #f4f5fa"
+      ></button>
+      <button
+        type="button"
+        class="theme-btn"
+        data-theme="forest"
+        title="Forest"
+        style="background: #0f2419"
+      ></button>
+      <button
+        type="button"
+        class="theme-btn"
+        data-theme="rose"
+        title="Rose"
+        style="background: #fff1f2"
+      ></button>
+    </div>
+    <h1 class="smart-brand">
+      <span class="brand-sm" aria-hidden="true">Sm</span>
+      <svg
+        class="delta-animation"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 32 32"
+        aria-hidden="true"
+      >
+        <polygon points="16,5.33 26.67,24 5.33,24" />
+      </svg>
+      <span class="brand-rt" aria-hidden="true">rt</span>
+      <span class="brand-suffix">Color Picker — drop-in widget</span>
+    </h1>
+
+    <!-- Decorative SmΔrt palette icon (static, dots cycle colors only) -->
+    <svg
+      class="palette-icon"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 32 32"
+      aria-hidden="true"
+    >
+      <g transform="scale(0.8889)">
+        <path
+          fill="none"
+          stroke="#c48a63"
+          stroke-width="1.98"
+          stroke-linecap="round"
+          d="M18 3.143c-9.941 0-18 6.908-18 15.428 0 1.066.126 2.107.367 3.112C2.146 24.744 3.377 22.812 9 20c5.727-2.864 0 4-2 8-.615 1.23-.282 2.271.56 3.124C10.506 32.928 14.104 34 18 34c9.941 0 18-6.907 18-15.429 0-8.52-8.059-15.428-18-15.428zm2.849 24.447c-.395 1.346-2.46 1.924-4.613 1.291-2.153-.632-3.578-2.234-3.183-3.581.395-1.346 2.46-1.924 4.613-1.29 2.153.631 3.578 2.233 3.183 3.58z"
+          transform="translate(0.99, 0.98) scale(0.927, 0.927)"
+        />
+        <circle
+          cx="10"
+          cy="11"
+          r="3"
+          fill="#5C913B"
+          transform="scale(1.150, 1.100)"
+        >
+          <animate
+            attributeName="fill"
+            values="#5C913B;#269;#DD2E44;#FFCC4D;#5C913B"
+            dur="4s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        <circle
+          cx="20"
+          cy="9"
+          r="3"
+          fill="#269"
+          transform="translate(-0.44, 0) scale(1.064, 1.112)"
+        >
+          <animate
+            attributeName="fill"
+            values="#269;#DD2E44;#FFCC4D;#5C913B;#269"
+            dur="4s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        <circle
+          cx="29"
+          cy="15"
+          r="3"
+          fill="#DD2E44"
+          transform="translate(-3.14, 0.98) scale(1.049, 0.968)"
+        >
+          <animate
+            attributeName="fill"
+            values="#DD2E44;#FFCC4D;#5C913B;#269;#DD2E44"
+            dur="4s"
+            repeatCount="indefinite"
+          />
+        </circle>
+        <circle
+          cx="28"
+          cy="24"
+          r="3"
+          fill="#FFCC4D"
+          transform="translate(-6.75, -3) scale(1.167, 1.083)"
+        >
+          <animate
+            attributeName="fill"
+            values="#FFCC4D;#5C913B;#269;#DD2E44;#FFCC4D"
+            dur="4s"
+            repeatCount="indefinite"
+          />
+        </circle>
+      </g>
+    </svg>
+
+    <!-- Drop-in widget: a single color button is all you add to your
+         page. Click it → the picker iframe opens anchored below; emits
+         flow back as `scp:color` / `scp:validate` postMessage events.
+         The code panel below is purely informational so you can see
+         the exact payload + a ready-to-paste CSS snippet. -->
+    <div class="host-card">
+      <div class="host-card-title">Drop-in widget</div>
+
+      <button class="color-btn big" id="colorBtn" type="button">
+        <span class="chip"><span class="chip-fill"></span></span>
+        <span class="chip-val">#6366f1</span>
+        <span class="chip-meta">100%</span>
+      </button>
+
+      <!-- Live, interactive code panel. Two tabs:
+           \u2022 Payload \u2014 the JSON envelope/data the widget posts back
+           \u2022 CSS     \u2014 a ready-to-paste CSS snippet using the value
+           Each pane has a Copy button so you can try the data in your
+           own page. -->
+      <div class="code-panel">
+        <div class="code-tabs" role="tablist">
+          <button
+            type="button"
+            class="code-tab active"
+            data-pane="payload"
+            role="tab"
+          >
+            Payload
+          </button>
+          <button type="button" class="code-tab" data-pane="css" role="tab">
+            CSS
+          </button>
+          <span class="code-pill" id="codePill">solid</span>
+          <button type="button" class="code-copy" id="codeCopy" title="Copy">
+            Copy
+          </button>
+        </div>
+        <pre class="code-pane active" data-pane="payload" id="paneJSON">
+// click the button above to pick a color</pre
+        >
+        <pre class="code-pane" data-pane="css" id="paneCSS">
+/* CSS snippet appears here */</pre
+        >
+      </div>
+    </div>
+
+    <!-- Fullscreen iframe — holds the draggable color picker layer.
+         Stays in DOM (so iframe content keeps state) but hidden via
+         body.picker-open class until the user opens it. -->
+    <iframe
+      id="pickerFrame"
+      src="./smart-color-picker.html?embed=overlay"
+      title="SmΔrt Color Picker"
+      allow="clipboard-write"
+    ></iframe>
+
+    <!-- ════════════════════════════════════════════════════════════
+         SmΔrt Title Animation + Favicon (inlined from shared/)
+         ════════════════════════════════════════════════════════════ -->
+    <script>
+      (function () {
+        "use strict";
+        const CONFIG = {
+          colors: {
+            hex: ["#00ffff", "#1dff00", "#fcf20a"],
+            rgb: ["0, 255, 255", "29, 255, 0", "252, 242, 10"],
+          },
+          interval: 107,
+        };
+        let rotation = 0,
+          colorIndex = 0,
+          thirdCount = 0;
+        let stopAt = null,
+          isPaused = false,
+          isStopped = false;
+        let intervalId = null,
+          deltaElements = [];
+        function getSharedStopAt() {
+          if (!window._smartAnimationStopAt)
+            window._smartAnimationStopAt = 4 + Math.floor(Math.random() * 3);
+          return window._smartAnimationStopAt;
+        }
+        function updateElements() {
+          const color = CONFIG.colors.hex[colorIndex];
+          const rgb = CONFIG.colors.rgb[colorIndex];
+          deltaElements.forEach((el) => {
+            if (el.tagName === "svg" || el.tagName === "SVG") {
+              el.style.transform = `rotate(${rotation}deg)`;
+              el.style.color = color;
+              el.style.filter = `drop-shadow(0 0 10px rgba(${rgb}, 0.5))`;
+              el.querySelectorAll("polygon, path").forEach((s) =>
+                s.setAttribute("stroke", color),
+              );
+            } else {
+              el.style.transform = `rotate(${rotation}deg)`;
+              el.style.color = color;
+              el.style.textShadow = `0 0 10px rgba(${rgb}, 0.5)`;
+            }
+          });
+        }
+        function animate() {
+          if (isStopped) return;
+          updateElements();
+          if (isPaused) return;
+          rotation = (rotation + 10) % 360;
+          if (rotation % 120 === 0) {
+            thirdCount++;
+            colorIndex = (colorIndex + 1) % 3;
+            if (thirdCount >= stopAt) {
+              isPaused = true;
+              setTimeout(() => {
+                isStopped = true;
+                if (intervalId) {
+                  clearInterval(intervalId);
+                  intervalId = null;
+                }
+                updateElements();
+              }, 400);
+            } else {
+              isPaused = true;
+              setTimeout(() => {
+                isPaused = false;
+              }, 300);
+            }
+          }
+        }
+        function start() {
+          if (intervalId) return;
+          deltaElements = Array.from(
+            document.querySelectorAll(".delta-animation"),
+          );
+          if (!deltaElements.length) return;
+          deltaElements.forEach((el) => {
+            el.style.animation = "none";
+            el.style.transition = "none";
+            el.style.display = "inline-block";
+          });
+          rotation = 0;
+          colorIndex = 0;
+          thirdCount = 0;
+          stopAt = getSharedStopAt();
+          isPaused = false;
+          isStopped = false;
+          intervalId = setInterval(animate, CONFIG.interval);
+        }
+        if (document.readyState === "loading")
+          document.addEventListener("DOMContentLoaded", start);
+        else setTimeout(start, 100);
+      })();
+    </script>
 
     <script>
-      const frame = document.getElementById("picker");
-      const swatch = document.getElementById("swatch");
-      const hex = document.getElementById("hex");
+      (function () {
+        "use strict";
+        const CONFIG = {
+          colors: ["%2300ffff", "%231dff00", "%23fcf20a"],
+          size: 32,
+          strokeWidth: 2.5,
+          cx: 16,
+          cy: 17.78,
+          interval: 80,
+        };
+        let rotation = 0,
+          colorIndex = 0,
+          thirdCount = 0;
+        let stopAt = null,
+          isPaused = false,
+          isStopped = false;
+        let intervalId = null,
+          favicon = null;
+        function getSharedStopAt() {
+          if (!window._smartAnimationStopAt)
+            window._smartAnimationStopAt = 4 + Math.floor(Math.random() * 3);
+          return window._smartAnimationStopAt;
+        }
+        function createSVG(rot, color) {
+          return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${CONFIG.size}' height='${CONFIG.size}' viewBox='0 0 ${CONFIG.size} ${CONFIG.size}'%3E%3Cpolygon points='16,5.33 26.67,24 5.33,24' fill='none' stroke='${color}' stroke-width='${CONFIG.strokeWidth}' transform='rotate(${rot} ${CONFIG.cx} ${CONFIG.cy})'/%3E%3C/svg%3E`;
+        }
+        function update() {
+          if (favicon)
+            favicon.href = createSVG(rotation, CONFIG.colors[colorIndex]);
+        }
+        function animate() {
+          if (isStopped) return;
+          update();
+          if (isPaused) return;
+          rotation = (rotation + 10) % 360;
+          if (rotation % 120 === 0) {
+            thirdCount++;
+            colorIndex = (colorIndex + 1) % 3;
+            if (thirdCount >= stopAt) {
+              isPaused = true;
+              setTimeout(() => {
+                isStopped = true;
+                if (intervalId) {
+                  clearInterval(intervalId);
+                  intervalId = null;
+                }
+                update();
+              }, 400);
+            } else {
+              isPaused = true;
+              setTimeout(() => {
+                isPaused = false;
+              }, 300);
+            }
+          }
+        }
+        function start() {
+          if (intervalId) return;
+          rotation = 0;
+          colorIndex = 0;
+          thirdCount = 0;
+          stopAt = getSharedStopAt();
+          isPaused = false;
+          isStopped = false;
+          favicon =
+            document.querySelector('link[rel="icon"]') ||
+            document.getElementById("dynamicFavicon");
+          if (!favicon) {
+            favicon = document.createElement("link");
+            favicon.rel = "icon";
+            favicon.type = "image/svg+xml";
+            favicon.id = "dynamicFavicon";
+            document.head.appendChild(favicon);
+          }
+          intervalId = setInterval(animate, CONFIG.interval);
+        }
+        if (document.readyState === "loading")
+          document.addEventListener("DOMContentLoaded", start);
+        else start();
+      })();
+    </script>
 
-      // Open with a starting color once the iframe is ready
-      frame.addEventListener("load", () => {
+    <script>
+      // ─── Picker host bridge (minimal) ────────────────────────────
+      // The host has ONE color button. Clicking it opens the floating
+      // picker anchored just below the button. The picker posts color
+      // updates back; we render them as both a payload (JSON) and a
+      // ready-to-paste CSS snippet inside an interactive code panel.
+      const frame = document.getElementById("pickerFrame");
+      const colorBtn = document.getElementById("colorBtn");
+      const chipFill = colorBtn.querySelector(".chip-fill");
+      const chipVal = colorBtn.querySelector(".chip-val");
+      const chipMeta = colorBtn.querySelector(".chip-meta");
+      const paneJSON = document.getElementById("paneJSON");
+      const paneCSS = document.getElementById("paneCSS");
+      const codePill = document.getElementById("codePill");
+      const codeCopy = document.getElementById("codeCopy");
+
+      // Single source of truth for the demo's current color
+      const state = {
+        hex: "#6366f1",
+        rgba: "rgba(99,102,241,1)",
+        alpha: 1,
+        gradient: null, // present when picker emits gradientActive=true
+        last: null, // last raw payload from picker (for JSON pane)
+      };
+
+      let frameReady = false;
+      let pendingPayload = null;
+
+      function postToPicker(action, data) {
+        if (!frameReady) return;
         frame.contentWindow.postMessage(
-          { type: "scp:open", color: "#6366f1", theme: "dark" },
-          "*"
+          { type: "smart-widget", action, data: data || {} },
+          "*",
         );
-      });
+      }
 
-      // Listen for color updates
-      window.addEventListener("message", (e) => {
-        if (!e.data || typeof e.data !== "object") return;
-        if (e.data.type === "scp:color" || e.data.type === "scp:commit") {
-          const css = e.data.rgba || e.data.hex;
-          if (!css) return;
-          swatch.style.background = css;
-          hex.textContent = e.data.hex || css;
+      // Auto-detect host theme from body's computed bg luminance.
+      function detectTheme() {
+        const bg = getComputedStyle(document.body).backgroundColor;
+        const m = bg.match(/\d+(\.\d+)?/g);
+        if (!m) return "dark";
+        const [r, g, b] = m.map(Number);
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return lum > 0.5 ? "light" : "dark";
+      }
+
+      // Pull host's CSS tokens so the picker matches host surfaces.
+      function hostPalette() {
+        const cs = getComputedStyle(document.documentElement);
+        const v = (n) => cs.getPropertyValue(n).trim() || undefined;
+        return {
+          bg: v("--bg"),
+          surface: v("--bg"),
+          text: v("--fg"),
+          muted: v("--muted"),
+          accent: v("--accent"),
+        };
+      }
+
+      // Open the picker just below the color button.
+      function openPicker() {
+        colorBtn.classList.add("active");
+        const r = colorBtn.getBoundingClientRect();
+        const payload = {
+          x: r.left + r.width / 2,
+          y: r.bottom,
+          hex: state.hex,
+          alpha: state.alpha,
+          theme: detectTheme(),
+          palette: hostPalette(),
+        };
+        document.body.classList.add("picker-open");
+        if (frameReady) {
+          postToPicker("scp:open", payload);
+          postToPicker("scp:setGradient", {
+            open: !!state.gradient,
+            type: state.gradient && state.gradient.type,
+            angle: state.gradient && state.gradient.angle,
+          });
+        } else {
+          pendingPayload = payload;
+        }
+      }
+      function closePicker() {
+        document.body.classList.remove("picker-open");
+        colorBtn.classList.remove("active");
+      }
+      colorBtn.addEventListener("click", openPicker);
+
+      frame.addEventListener("load", () => {
+        frameReady = true;
+        if (pendingPayload) {
+          postToPicker("scp:open", pendingPayload);
+          pendingPayload = null;
         }
       });
+
+      // ─── Host theme presets ──────────────────────────────────────
+      const THEMES = {
+        midnight: {
+          bg: "#1a1d2e",
+          fg: "#e0e0e0",
+          muted: "#9ca3af",
+          accent: "#6366f1",
+        },
+        paper: {
+          bg: "#f4f5fa",
+          fg: "#111827",
+          muted: "#6b7280",
+          accent: "#0ea5e9",
+        },
+        forest: {
+          bg: "#0f2419",
+          fg: "#e7f5ec",
+          muted: "#86efac",
+          accent: "#22c55e",
+        },
+        rose: {
+          bg: "#fff1f2",
+          fg: "#3f1117",
+          muted: "#9f1239",
+          accent: "#e11d48",
+        },
+      };
+      function applyHostTheme(name) {
+        const t = THEMES[name];
+        if (!t) return;
+        const root = document.documentElement;
+        root.style.setProperty("--bg", t.bg);
+        root.style.setProperty("--fg", t.fg);
+        root.style.setProperty("--muted", t.muted);
+        root.style.setProperty("--accent", t.accent);
+        document
+          .querySelectorAll(".theme-switch button")
+          .forEach((b) =>
+            b.classList.toggle("active", b.dataset.theme === name),
+          );
+        if (frameReady) {
+          postToPicker("scp:setTheme", {
+            theme: detectTheme(),
+            palette: hostPalette(),
+          });
+        }
+      }
+      document.querySelectorAll(".theme-switch button").forEach((b) => {
+        b.addEventListener("click", () => applyHostTheme(b.dataset.theme));
+      });
+
+      // ─── Render: button chip + code panel ────────────────────────
+      function rgbaFromHexAlpha(hex, a) {
+        const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "");
+        if (!m) return `rgba(0,0,0,${a})`;
+        return `rgba(${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}, ${a})`;
+      }
+      function renderChip() {
+        if (state.gradient) {
+          chipFill.style.background = state.gradient.css;
+          chipVal.textContent =
+            state.gradient.type +
+            "-gradient · " +
+            state.gradient.stops +
+            " stops";
+          chipMeta.textContent = "—";
+        } else {
+          chipFill.style.background = state.rgba;
+          chipVal.textContent = state.hex;
+          chipMeta.textContent = Math.round(state.alpha * 100) + "%";
+        }
+      }
+      function renderCode() {
+        // Payload pane = pretty-printed last message from picker
+        paneJSON.textContent = state.last
+          ? JSON.stringify(state.last, null, 2)
+          : "// click the button above to pick a color";
+
+        // CSS pane = a useful snippet using the current value
+        if (state.gradient) {
+          paneCSS.textContent =
+            "/* Use as background */\n" +
+            ".my-element {\n  background: " +
+            state.gradient.css +
+            ";\n}";
+        } else {
+          paneCSS.textContent =
+            "/* Use as text or background */\n" +
+            ":root {\n  --my-color: " +
+            state.hex +
+            ";\n}\n\n" +
+            ".my-element {\n  color: " +
+            state.hex +
+            ";\n  background: " +
+            state.rgba +
+            ";\n}";
+        }
+        codePill.textContent = state.gradient ? "gradient" : "solid";
+      }
+
+      // Tab switcher
+      document.querySelectorAll(".code-tab").forEach((t) => {
+        t.addEventListener("click", () => {
+          const target = t.dataset.pane;
+          document
+            .querySelectorAll(".code-tab")
+            .forEach((x) => x.classList.toggle("active", x === t));
+          document
+            .querySelectorAll(".code-pane")
+            .forEach((p) =>
+              p.classList.toggle("active", p.dataset.pane === target),
+            );
+        });
+      });
+
+      // Copy active pane to clipboard
+      codeCopy.addEventListener("click", async () => {
+        const active = document.querySelector(".code-pane.active");
+        if (!active) return;
+        try {
+          await navigator.clipboard.writeText(active.textContent);
+          codeCopy.classList.add("copied");
+          codeCopy.textContent = "Copied!";
+          setTimeout(() => {
+            codeCopy.classList.remove("copied");
+            codeCopy.textContent = "Copy";
+          }, 1200);
+        } catch (e) {
+          /* clipboard blocked */
+        }
+      });
+
+      // ─── Receive picker messages ─────────────────────────────────
+      window.addEventListener("message", (e) => {
+        const msg = e.data;
+        if (!msg || typeof msg !== "object" || msg.type !== "smart-widget")
+          return;
+
+        if (msg.action === "scp:color" || msg.action === "scp:validate") {
+          const d = msg.data || {};
+          state.last = d;
+          if (d.gradientActive && d.gradient) {
+            state.gradient = {
+              css: d.gradient,
+              type: d.gradientData ? d.gradientData.type : "linear",
+              angle: d.gradientData ? d.gradientData.angle : 90,
+              stops: ((d.gradientData && d.gradientData.stops) || []).length,
+            };
+          } else {
+            // Gradient OFF → fall back to the solid color the picker
+            // is currently sitting on. The picker emits rgba as an
+            // object {r,g,b,a}, so build the CSS string ourselves.
+            state.gradient = null;
+            state.hex = d.hex || state.hex;
+            if (d.rgba && typeof d.rgba === "object") {
+              const { r, g, b, a } = d.rgba;
+              state.rgba = `rgba(${r}, ${g}, ${b}, ${a})`;
+              state.alpha = typeof a === "number" ? a : 1;
+            } else if (typeof d.rgba === "string") {
+              state.rgba = d.rgba;
+              const am = /rgba?\([^)]*?,\s*([\d.]+)\)/i.exec(d.rgba);
+              state.alpha = am ? parseFloat(am[1]) : 1;
+            }
+          }
+          renderChip();
+          renderCode();
+        } else if (msg.action === "scp:close") {
+          closePicker();
+        }
+      });
+
+      // Initial render
+      renderChip();
+      renderCode();
     </script>
   </body>
 </html>
