@@ -6,11 +6,20 @@ A self-contained, framework-free color picker widget — solid color, gradient e
 - **Size:** ~1 file (HTML + inlined CSS/JS)
 - **License:** see repository
 
+## 🎨 Live demo
+
+Click a link to launch the picker — the panel auto-opens in standalone mode:
+
+- 🚀 **[Latest (GitHub Pages)](https://smdeltart.github.io/smart-color-picker/smart-color-picker.html)** — tracks `main`
+- 📦 **[v1.2.0 pinned (Statically)](https://cdn.statically.io/gh/SmDeltArt/smart-color-picker/v1.2.0/smart-color-picker.html)** — tagged release
+- 🪟 **[Overlay mode (Pages)](https://smdeltart.github.io/smart-color-picker/smart-color-picker.html?embed=overlay)** — fullscreen iframe-style overlay
+- 🧪 **[Demo host page](https://smdeltart.github.io/smart-color-picker/demo.html)** — picker embedded in a sample app
+
 ## Quick start
 
 ### 1. As a standalone page
 
-Just open `smart-color-picker.html` in any browser.
+Just open `smart-color-picker.html` in any browser, or click the live links above.
 
 ### 2. Embed in your site (iframe)
 
