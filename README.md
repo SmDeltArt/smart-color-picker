@@ -24,16 +24,16 @@ Just open `smart-color-picker.html` in any browser.
 
 GitHub Pages serves the file with `Content-Type: text/html`, so it renders
 and iframes correctly. Pin a tag in production by using a tagged Statically
-URL (see below) instead of Pages, which always tracks the default branch (`root`).
+URL (see below) instead of Pages, which always tracks the default branch (`main`).
 
 ### 3. Hosting / CDN options
 
-| Source                | URL pattern                                                                               | Renders HTML? |
-| --------------------- | ----------------------------------------------------------------------------------------- | ------------- |
-| **GitHub Pages**      | `https://smdeltart.github.io/smart-color-picker/smart-color-picker.html`                  | ✅ yes (recommended) |
-| **Statically** (pinned) | `https://cdn.statically.io/gh/SmDeltArt/smart-color-picker/<tag>/smart-color-picker.html` | ✅ yes |
-| jsDelivr (asset only) | `https://cdn.jsdelivr.net/gh/SmDeltArt/smart-color-picker@<tag>/smart-color-picker.html`  | ❌ served as `text/plain` — fine for `fetch()`, **not** for direct viewing or iframes |
-| Vercel                | deploy this repo and route `/smart-color-picker.html`                                     | ✅ yes |
+| Source                  | URL pattern                                                                               | Renders HTML?                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **GitHub Pages**        | `https://smdeltart.github.io/smart-color-picker/smart-color-picker.html`                  | ✅ yes (recommended)                                                                  |
+| **Statically** (pinned) | `https://cdn.statically.io/gh/SmDeltArt/smart-color-picker/<tag>/smart-color-picker.html` | ✅ yes                                                                                |
+| jsDelivr (asset only)   | `https://cdn.jsdelivr.net/gh/SmDeltArt/smart-color-picker@<tag>/smart-color-picker.html`  | ❌ served as `text/plain` — fine for `fetch()`, **not** for direct viewing or iframes |
+| Vercel                  | deploy this repo and route `/smart-color-picker.html`                                     | ✅ yes                                                                                |
 
 > **Why not jsDelivr for iframes?** jsDelivr deliberately serves HTML files
 > from `/gh/` paths as `text/plain` to discourage abuse. Use it for
