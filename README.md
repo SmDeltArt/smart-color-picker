@@ -138,6 +138,111 @@ You can also pass `palette` inside `scp:open` data to apply at open time. Reset 
 - `scp:close` · panel dismissed
 - `scp:size` · panel bbox `{ width, height }` so host can shrink iframe to fit
 
+## Applying the result in your app
+
+The picker returns **either a solid color or a CSS gradient string**. Backgrounds accept both, but **`color: linear-gradient(...)` is invalid CSS** — gradients on text need the `background-clip:text` technique. Apply this everywhere your app sets text foreground (toolbars, frames, table/spreadsheet cells, contenteditable selections).
+
+### Single helper for solid + gradient
+
+```js
+function applyTextColor(el, color) {
+  const isGradient = typeof color === "string" && color.includes("gradient");
+  if (isGradient) {
+    el.style.backgroundImage = color;
+    el.style.webkitBackgroundClip = "text";
+    el.style.backgroundClip = "text";
+    el.style.color = "transparent";
+  } else {
+    // clear any previous gradient state, then set the solid color
+    el.style.backgroundImage = "";
+    el.style.webkitBackgroundClip = "";
+    el.style.backgroundClip = "";
+    el.style.color = color;
+  }
+}
+
+function applyBgColor(el, color) {
+  // backgrounds take both solid colors and gradients natively
+  el.style.background = color;
+}
+```
+
+### Wiring it to picker messages
+
+```js
+window.addEventListener("message", (e) => {
+  const msg = e.data;
+  if (!msg || msg.type !== "smart-widget") return;
+  if (msg.action !== "scp:color" && msg.action !== "scp:validate") return;
+
+  const d = msg.data || {};
+  // Pick the richest representation: gradient > rgba (with alpha) > hex
+  const color =
+    d.gradientActive && d.gradient && d.gradient.includes("gradient")
+      ? d.gradient
+      : d.rgba && typeof d.a === "number" && d.a < 1
+        ? d.rgba
+        : d.hex;
+
+  if (!color) return;
+  applyTextColor(myTargetEl, color); // or applyBgColor(...)
+});
+```
+
+### contenteditable / `execCommand("foreColor")`
+
+`document.execCommand("foreColor")` only accepts solid colors. For a gradient on the **selected text inside a contenteditable**, wrap the range in a span instead:
+
+```js
+function paintSelectionWithColor(color) {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const isGradient = typeof color === "string" && color.includes("gradient");
+
+  if (isGradient) {
+    const span = document.createElement("span");
+    span.style.cssText =
+      `background-image:${color};` +
+      `-webkit-background-clip:text;background-clip:text;color:transparent;`;
+    span.appendChild(range.extractContents());
+    range.insertNode(span);
+  } else {
+    document.execCommand("foreColor", false, color);
+  }
+}
+```
+
+> **Cross-origin gotcha:** when the picker iframe is hosted on a different origin (Pages/Statically), the iframe steals focus on click. Re-focus your editor and re-add the saved `Range` to the selection **before** mutating the DOM, otherwise `execCommand` and `range.extractContents()` will operate on nothing.
+
+### Spreadsheet / table cells
+
+Same pattern as text — apply `applyTextColor()` to each selected cell's `style`. For **cell background** just assign `style.background = color` (gradients work directly there).
+
+### LLM prompt (drop into Copilot / Claude / etc. when integrating)
+
+```text
+I am embedding the SmDeltArt smart-color-picker via iframe. The picker
+posts messages: { type:"smart-widget", action:"scp:color"|"scp:validate",
+data:{ hex, rgba, hsla, gradient, gradientActive } }.
+
+Wire color application so it works for BOTH solid colors AND CSS gradients:
+- Backgrounds: assign element.style.background directly (accepts both).
+- Text foreground: solid → element.style.color; gradient → set
+  backgroundImage + (webkit-)background-clip:text + color:transparent
+  (clear the opposite mode each time so leftovers don't leak).
+- Inside contenteditable: execCommand("foreColor") only accepts solids.
+  For gradients, wrap the current Range in a <span> with the
+  background-clip:text styles.
+- Cross-origin iframe: refocus the editor and restore the saved Range
+  before mutating the DOM (the iframe steals focus on click).
+
+Refactor every text-color code path through a single applyTextColor(el, c)
+helper that branches on c.includes("gradient"). Apply to: toolbar text-
+color buttons, selected text-frame foreground, table/spreadsheet selected
+cells, and execCommand-based document text coloring.
+```
+
 ## Features
 
 - HSV color wheel + value/alpha track
