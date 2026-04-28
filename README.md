@@ -24,7 +24,7 @@ Just open `smart-color-picker.html` in any browser.
 
 GitHub Pages serves the file with `Content-Type: text/html`, so it renders
 and iframes correctly. Pin a tag in production by using a tagged Statically
-URL (see below) instead of Pages, which always tracks `main`.
+URL (see below) instead of Pages, which always tracks the default branch (`root`).
 
 ### 3. Hosting / CDN options
 
