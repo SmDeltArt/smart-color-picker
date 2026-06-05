@@ -10,10 +10,10 @@ A self-contained, framework-free color picker widget — solid color, gradient e
 
 Click a link to launch the picker — the panel auto-opens in standalone mode:
 
-- 🚀 **[Latest (GitHub Pages)](https://smdeltart.github.io/smart-color-picker/smart-color-picker.html)** — tracks `main`
+- 🚀 **[Vercel CDN (canonical)](https://color-picker.caddeltai.com/)** — `color-picker.caddeltai.com`
+- 🌍 **[Vercel CDN (SmΔrt alias)](https://color-picker.smdeltart.com/)** — `color-picker.smdeltart.com`
 - 📦 **[v1.2.0 pinned (Statically)](https://cdn.statically.io/gh/SmDeltArt/smart-color-picker/v1.2.0/smart-color-picker.html)** — tagged release
-- 🪟 **[Overlay mode (Pages)](https://smdeltart.github.io/smart-color-picker/smart-color-picker.html?embed=overlay)** — fullscreen iframe-style overlay
-- 🧪 **[Demo host page](https://smdeltart.github.io/smart-color-picker/demo.html)** — picker embedded in a sample app
+- 🧪 **[Demo host page](https://color-picker.caddeltai.com/demo)** — picker embedded in a sample app (`color-picker.caddeltai.com/demo`)
 
 ## Quick start
 
@@ -23,17 +23,75 @@ Just open `smart-color-picker.html` in any browser, or click the live links abov
 
 ### 2. Embed in your site (iframe)
 
+Use the Vercel CDN URL — open CORS, `frame-ancestors *`, `Cross-Origin-Resource-Policy: cross-origin`:
+
 ```html
 <iframe
-  src="https://smdeltart.github.io/smart-color-picker/smart-color-picker.html"
+  src="https://color-picker.caddeltai.com/?embed=overlay"
   style="border:0;width:420px;height:560px;background:transparent"
   allowtransparency="true"
 ></iframe>
 ```
 
-GitHub Pages serves the file with `Content-Type: text/html`, so it renders
-and iframes correctly. Pin a tag in production by using a tagged Statically
-URL (see below) instead of Pages, which always tracks the default branch (`main`).
+For local dev, use the relative same-origin URL instead (see isLocal pattern below).
+
+---
+
+## Deploy on Vercel (CDN)
+
+This repo ships a `vercel.json` for direct Vercel deployment — same pattern as
+`api-caddeltai.vercel.app` in the SmΔrt ecosystem.
+
+### Setup
+
+1. **Connect** this repo to a Vercel project (no _Root Directory_ config needed).
+2. **Assign** custom domains in the Vercel dashboard.
+3. **Done.** The `vercel.json` handles clean URLs, CORS, and `frame-ancestors *`.
+
+**Live deployments:**
+
+| Domain                          | Purpose                            |
+| ------------------------------- | ---------------------------------- |
+| `smart-color-picker.vercel.app` | Vercel auto-URL (always available) |
+| `color-picker.caddeltai.com`    | CAD-AI canonical CDN ✅ live       |
+| `color-picker.smdeltart.com`    | SmΔrt Collection alias ✅ live     |
+
+Routes once deployed:
+
+| URL       | Serves                    |
+| --------- | ------------------------- |
+| `/`       | `smart-color-picker.html` |
+| `/picker` | `smart-color-picker.html` |
+| `/demo`   | `demo.html`               |
+
+### Embed from any SmΔrt app (isLocal pattern)
+
+Use the same pattern as the api-settings bridge so local dev works without CORS
+and production uses the CDN:
+
+```js
+const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+const SCP_SRC = isLocal
+  ? "smart-color-picker.html?embed=overlay" // same-origin (local dev)
+  : "https://color-picker.caddeltai.com/?embed=overlay"; // Vercel CDN (production)
+```
+
+Then set the iframe src:
+
+```html
+<iframe id="scpFrame" src="" style="display:none;border:0;"></iframe>
+<script>
+  document.getElementById("scpFrame").src = SCP_SRC;
+</script>
+```
+
+### Security note
+
+`frame-ancestors *` and open CORS are intentional for a public CDN widget — the
+color picker holds no sensitive data. The `postMessage` protocol uses the
+`{ type:"smart-widget" }` envelope to avoid collisions with other messages.
+
+---
 
 ### 3. Hosting / CDN options
 
@@ -42,12 +100,27 @@ URL (see below) instead of Pages, which always tracks the default branch (`main`
 | **GitHub Pages**        | `https://smdeltart.github.io/smart-color-picker/smart-color-picker.html`                  | ✅ yes (recommended)                                                                  |
 | **Statically** (pinned) | `https://cdn.statically.io/gh/SmDeltArt/smart-color-picker/<tag>/smart-color-picker.html` | ✅ yes                                                                                |
 | jsDelivr (asset only)   | `https://cdn.jsdelivr.net/gh/SmDeltArt/smart-color-picker@<tag>/smart-color-picker.html`  | ❌ served as `text/plain` — fine for `fetch()`, **not** for direct viewing or iframes |
-| Vercel                  | deploy this repo and route `/smart-color-picker.html`                                     | ✅ yes                                                                                |
+| **Vercel CDN** ✅ live  | `https://color-picker.caddeltai.com/` · `https://color-picker.smdeltart.com/`             | ✅ yes — `frame-ancestors *`, open CORS                                               |
 
 > **Why not jsDelivr for iframes?** jsDelivr deliberately serves HTML files
 > from `/gh/` paths as `text/plain` to discourage abuse. Use it for
 > `fetch()`-style asset loading; use **GitHub Pages** or **Statically** for
 > direct page / iframe URLs.
+
+---
+
+## Used in SmΔrt Collection
+
+These apps embed the picker from `color-picker.caddeltai.com` when deployed, and from a local copy during development (isLocal pattern):
+
+| App | Domain | Integration |
+| --- | ------ | ----------- |
+| SmΔrt SVG Editor | `widgets.smdeltart.com/?app=svg` | overlay panel — `embed=overlay` mode |
+| SmΔrt 3D Editor | `widgets.smdeltart.com/?app=3d` | background color + material color picker |
+
+Both use the same isLocal bridge pattern (see [Embed from any SmΔrt app](#embed-from-any-smrt-app-islocal-pattern) above).
+
+---
 
 ## Public API
 
@@ -78,7 +151,7 @@ Set before the script runs:
 
 ### postMessage bridge (for iframe hosts)
 
-All messages use a `{ type: "smart-widget", action, data }` envelope. The widget only accepts messages from same-origin, `localhost`, `127.0.0.1`, `https://smdeltart.com`, or `https://smdeltart-*.vercel.app`.
+All messages use a `{ type: "smart-widget", action, data }` envelope. The widget accepts messages from any origin (open CDN design — no origin restriction).
 
 ```js
 const frame = document.getElementById("colorPickerFrame");
