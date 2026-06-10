@@ -50,11 +50,11 @@ This repo ships a `vercel.json` for direct Vercel deployment — same pattern as
 
 **Live deployments:**
 
-| Domain                          | Purpose                            |
-| ------------------------------- | ---------------------------------- |
-| `smart-color-picker.vercel.app` | Vercel auto-URL (always available) |
-| `color-picker.caddeltai.com`    | CAD-AI canonical CDN ✅ live       |
-| `color-picker.smdeltart.com`    | SmΔrt Collection alias ✅ live     |
+| Domain                          | Purpose                                         |
+| ------------------------------- | ----------------------------------------------- |
+| `color-iota-five.vercel.app`    | Vercel live URL ✅                              |
+| `color-picker.caddeltai.com`    | CAD-AI canonical CDN (pending Vercel domain setup) |
+| `color-picker.smdeltart.com`    | SmΔrt Collection alias (pending Vercel domain setup) |
 
 Routes once deployed:
 
@@ -70,10 +70,13 @@ Use the same pattern as the api-settings bridge so local dev works without CORS
 and production uses the CDN:
 
 ```js
-const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+// IMPORTANT: use window.location.origin (absolute path), not a relative path.
+// __actual_vs/ is the server root; color/ is served at /color/.
+const isLocal = ["localhost", "127.0.0.1", ""].includes(window.location.hostname);
 const SCP_SRC = isLocal
-  ? "smart-color-picker.html?embed=overlay" // same-origin (local dev)
-  : "https://smdeltart.github.io/smart-color-picker/smart-color-picker.html?embed=overlay"; // GitHub Pages (production)
+  ? window.location.origin + "/color/smart-color-picker.html?embed=overlay" // absolute from server root
+  : "https://color-iota-five.vercel.app/picker?embed=overlay"; // Vercel CDN
+// Once custom domains are set up: use https://color-picker.caddeltai.com/picker
 ```
 
 Then set the iframe src:
